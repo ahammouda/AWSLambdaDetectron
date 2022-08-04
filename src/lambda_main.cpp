@@ -4,8 +4,8 @@
 #include <aws/lambda-runtime/runtime.h>
 #include "storage.hpp" // "prediction.hpp" is necessarily included in storage.hpp
 
-
-void FileExists(std::string path){
+//https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+void logContents(std::string path){
     using namespace std;
 
     DIR *dr;
@@ -16,26 +16,11 @@ void FileExists(std::string path){
             cout<<" \n"<<en->d_name; //print all directory name
         }
         closedir(dr); //close all directory
-        cout << "\n No More Iteration" << endl;
+        cout << "\n No more directory contents" << endl;
     } else {
-        cout<<"Director Not Found"<<endl;
+        cout<<"\n Directory Not Found"<<endl;
     }
 }
-
-// // https://stackoverflow.com/questions/10058606/splitting-a-string-by-a-character
-// std::vector<std::string> splitString(std::string textString,  std::string delimeter) {
-//     std::stringstream textStream(textString);
-//     std::vector<std::string> seglist;
-
-//     std::string segment;
-//     while(std::getline(textStream, segment, delimeter))
-//     {
-//         seglist.push_back(segment);
-//     }
-
-//     return seglist;
-// }
-
 
 using namespace aws::lambda_runtime;
 
@@ -49,10 +34,10 @@ static invocation_response my_handler(invocation_request const& req,
     auto const& baseDir = Aws::Environment::GetEnv("MODEL_DIR");
 
     std::cout << "Table Name:  " << tableName << std::endl;
-    std::cout << "MNT Dir:  " << baseDir << std::endl;
+    std::cout << "Model Directory:  " << baseDir << std::endl;
 
-    // Log existence/access to mount dir
-    FileExists( baseDir );
+    // Log existence/access to model directory
+    logContents( baseDir );
 
     using namespace Aws::Utils::Json;
     JsonValue json(req.payload);
@@ -62,7 +47,6 @@ static invocation_response my_handler(invocation_request const& req,
 
     auto v = json.View();
     if (!v.ValueExists("Records") ||
-        // v.GetArray("Records").size() == 0 ||
         !v.GetArray("Records")[0].ValueExists("s3") ||
         !v.GetArray("Records")[0].GetObject("s3").ValueExists("bucket")||
         !v.GetArray("Records")[0].GetObject("s3").ValueExists("object")) {
@@ -84,25 +68,18 @@ static invocation_response my_handler(invocation_request const& req,
     object_request.SetBucket(fromBucket);
     object_request.SetKey(objectKey);
 
-    AWS_LOGSTREAM_INFO(TAG, "Attempting to download file from s3://" << fromBucket << "/" << objectKey);
+    std::cout << "Attempting to download file from s3://" << fromBucket << "/" << objectKey << std::endl;
 
     Aws::S3::Model::GetObjectOutcome get_object_outcome =
         s3Client.GetObject(object_request);
 
     if (get_object_outcome.IsSuccess())
     {
-        // // TODO: remove these lines
-        // auto& file_ext = splitString(objectKey,".").back();
-        // std::cout << "file extension is: " << file_ext <<std::endl;
-
         // Write retreived file to the baseDir
         auto& retrieved_file = get_object_outcome.GetResultWithOwnership().
             GetBody();
         std::fstream image_file(baseDir + objectKey, std::ios::out | std::ios::binary);
         image_file << retrieved_file.rdbuf();
-
-        // TODO: remove this line
-        FileExists("/mnt/ml/models/");
 
         // Call prediction code and store results
         /*************************************************************************************/
@@ -111,7 +88,8 @@ static invocation_response my_handler(invocation_request const& req,
             baseDir + "model.ts"
         );
 
-        // TODO: do you want to do something with this first code?
+        // NOTE: this first status code isn't used
+        //            --> you want to run the rest of this function call no matter what
         int code = storePredictions(dynamoClient, tableName, predictionsList);
         /*************************************************************************************/
 
@@ -143,14 +121,6 @@ static invocation_response my_handler(invocation_request const& req,
 
     // Not super important what gets returned here - it will only be used by the http api gateway internally
     return invocation_response::success("success", "application/text");
-}
-
-std::function<std::shared_ptr<Aws::Utils::Logging::LogSystemInterface>()> GetConsoleLoggerFactory()
-{
-    return [] {
-        return Aws::MakeShared<Aws::Utils::Logging::ConsoleLogSystem>(
-            "console_logger", Aws::Utils::Logging::LogLevel::Trace);
-    };
 }
 
 int main()

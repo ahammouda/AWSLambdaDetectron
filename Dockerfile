@@ -63,13 +63,9 @@ RUN cd aws-sdk-cpp && mkdir build && cd build && \
     make -j 4 && make install
 
 # ************** detectron2 specific **************
-# install dependencies
-# See https://pytorch.org/ for other options if you use a different version of CUDA
-# RUN pip install --user tensorboard cmake   # cmake from apt-get is too old
-# RUN pip install --user torch==1.10 torchvision==0.11.1 -f https://download.pytorch.org/whl/cpu/torch_stable.html
-
+# install torvhvision dependencies:
 # Need to build 1.12 with abi as that is last documented compatibility with torchvision
-# Need to build with-abi as you will get linking error when building with aws-cpp-sdh o/w
+# Need to build with-abi as you will get linking error when building with aws-cpp-sdk o/w
 RUN wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.0%2Bcpu.zip
 #https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.0.zip
 RUN unzip libtorch-cxx11-abi-shared-with-deps-1.12.0+cpu.zip
@@ -78,10 +74,6 @@ USER appuser
 ENV HOME=/home/appuser
 WORKDIR $HOME
 
-# Let torchvision find libtorch
-# ENV CMAKE_PREFIX_PATH=$HOME/.local/lib/python3.6/site-packages/torch/
-
-# install libtorchvision  -DWITH_CUDA=on -DTORCH_CUDA_ARCH_LIST=$TORCH_CUDA_ARCH_LIST
 RUN git clone --branch v0.13.0 https://github.com/pytorch/vision/
 RUN mkdir vision/build && cd vision/build && \
 	cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_BUILD_TYPE=Release \
@@ -93,11 +85,9 @@ ENV CPATH=$HOME/.local/include \
 	  LIBRARY_PATH=$HOME/.local/lib \
 	  LD_LIBRARY_PATH=$HOME/.local/lib
 
-# # Local work:
 USER root
 WORKDIR /
 
-# TODO: Move all code into this block
 RUN mkdir $HOME/lambda_predictor
 ADD src/CMakeLists.txt $HOME/lambda_predictor
 ADD src/prediction.cpp $HOME/lambda_predictor
@@ -106,46 +96,20 @@ ADD src/predictAndStore.cpp $HOME/lambda_predictor
 ADD src/storage.hpp $HOME/lambda_predictor
 ADD src/storage.cpp $HOME/lambda_predictor
 ADD src/lambda_main.cpp $HOME/lambda_predictor
-# Comment next 2 lines except for local usage
+# uncomment next 2 lines except for local usage
 # ADD egdata/b60cfeea70c3c7045141eadce552135921b95679.png $HOME/lambda_predictor
 # ADD egdata/model.ts $HOME/lambda_predictor
 
 RUN mkdir $HOME/lambda_predictor/build && cd $HOME/lambda_predictor/build && \
     cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_PREFIX_PATH="/out;$HOME/.local/;/libtorch/" .. \
-    # -DCURL_LIBRARY=/usr/local/lib/libcurl.so .. \
     && make
 
-# Help lambda runtime find torchlib
+# Help lambda runtime find torchlib - very weird that it's only this library that needs an extra nudge,
+# but checks out to some extent with docs:
+# https://stackoverflow.com/questions/66370682/aws-lambda-not-finding-shared-object-file-in-layer
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
 RUN cp $HOME/.local/lib/libtorchvision.so /lib/
 
 # Entrypoint
 CMD ["/home/appuser/lambda_predictor/build/main"]
-
-# RUN mkdir /dynamoOnly
-# ADD srcDynamo/main.cpp /dynamoOnly
-# ADD srcDynamo/CMakeLists.txt /dynamoOnly
-
-# # Note may need to adjust the standard library linking for a new Dockerfile
-# # https://stackoverflow.com/questions/25243336/specifying-libraries-for-cmake-to-link-to-from-command-line
-# RUN cd /dynamoOnly && mkdir build && cd build && \
-#     cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-#     -DCMAKE_PREFIX_PATH="/out;/curl;/" \
-#     -DCMAKE_CXX_STANDARD_LIBRARIES=-luuid ..
-#     # # -DCMAKE_CXX_STANDARD_LIBRARIES=/usr/lib64/libuuid.so \
-#     # -Dcrypto_INCLUDE_DIR=/usr/include \
-#     # -Dcrypto_LIBRARY=/usr/lib64/libcrypto.so ..
-# RUN cd /dynamoOnly/build && make VERBOSE=1 # && make aws-lambda-package-s3event
-
-# # Looks like things build just fine
-# RUN mkdir $HOME/predictor/build && cd $HOME/predictor/build && \
-#     cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-#     -DCMAKE_PREFIX_PATH="/out;$HOME/.local/;/libtorch/" \
-#     -DCURL_LIBRARY=/usr/local/lib/libcurl.so \
-#     -DCMAKE_CXX_STANDARD_LIBRARIES=-luuid ..
-#     # -DCURL_INCLUDE_DIR=/usr/local/include/curl/ \
-#     # -DCMAKE_CXX_STANDARD_LIBRARIES=-luuid ..
-#     # -Dcrypto_INCLUDE_DIR=/usr/include \
-#     # -Dcrypto_LIBRARY=/usr/lib64/libcrypto.so \
-#     # -DAWS_CUSTOM_MEMORY_MANAGEMENT=0 ..
-# RUN cd $HOME/predictor/build && make VERBOSE=1

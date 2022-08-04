@@ -6,21 +6,8 @@ C++ source code for predicting classifications, and storing those predictions in
 ```
     $ docker build -t dlcpp -f Dockerfile .
     $ # NOTE: Need the --env-file flag for aws connections
-    $ docker run --env-file ./.env --rm -it dlcpp:latest /home/appuser/lambda_predictor/build/refactor
+    $ docker run --env-file ./.env --rm -it dlcpp:latest /home/appuser/lambda_predictor/build/testPredictAndStore
 ```
-
-# TODO
-[x] rename file
-[x] put stubs for dynamo
-[x] add libraries and rebuild/check
-[x] figure out how to construct and access predictions struct
-[x] copy over code for each part
-[] run all together to see that it works (and profile memory/storage)
-[] run where you're MNT and TABLE_NAME from env vars files
-[] add target for lambda handler entry point
-[] clean up repo, commit, and publish
-[] deploy to lambda and test
-[] Rename make targets
 
 
 # References:
