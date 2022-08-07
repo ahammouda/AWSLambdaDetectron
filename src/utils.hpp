@@ -4,12 +4,16 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <sys/types.h>
 #include <list>
 #include <map>
 #include <cmath>
 #include <string>
 #include <vector>
+
+#include <dirent.h> // NOTE:  is this really used anywhere
+#include <sys/types.h>
+#include <uuid/uuid.h> // For dynamo id fields
+
 
 // Conversion struct from torch tensor classification output to human readable
 // (Defenitions where created in the python MetaDataCatalouge map):
@@ -37,9 +41,6 @@ struct Prediction
     // to be referenced by this bounding box (if there is one)
     std::string imageId;
 };
-
-
-void dedupPredictions(std::list<Prediction> &predictions, float tolerance);
 
 std::vector<std::string> splitString(std::string textString,  char delimeter);
 

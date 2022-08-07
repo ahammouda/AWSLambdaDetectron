@@ -1,8 +1,7 @@
-#include <vector>
-#include <sstream>
+#include "prediction.hpp"
+#include "storage.hpp"
 
 #include <aws/lambda-runtime/runtime.h>
-#include "storage.hpp" // "prediction.hpp" is necessarily included in storage.hpp
 
 //https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 void logContents(std::string path){

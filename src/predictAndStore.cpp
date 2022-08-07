@@ -1,5 +1,5 @@
-// #include "prediction.hpp"
-#include "storage.hpp" // "prediction.hpp" is necessarily included in storage.hpp
+#include "prediction.hpp"
+#include "storage.hpp"
 
 int main()
 {

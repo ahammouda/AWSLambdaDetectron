@@ -1,10 +1,3 @@
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <dirent.h>
-#include <sys/types.h>
-#include <uuid/uuid.h> // For dynamo id fields
-
 // aws core
 #include <aws/core/Aws.h>
 #include <aws/core/utils/logging/LogLevel.h>
@@ -30,13 +23,13 @@
 #include <aws/dynamodb/model/PutItemRequest.h>
 #include <aws/dynamodb/model/PutItemResult.h>
 
+#include "utils.hpp"
+
 std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value);
 
 std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(char* value);
 
 std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value[], int size);
-
-#include "prediction.hpp"
 
 //const Aws::DynamoDB::DynamoDBClient& dynamoClient, //
 int storePredictions(
