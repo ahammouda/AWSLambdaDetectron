@@ -95,21 +95,25 @@ ADD src/prediction.hpp $HOME/lambda_predictor
 ADD src/predictAndStore.cpp $HOME/lambda_predictor
 ADD src/storage.hpp $HOME/lambda_predictor
 ADD src/storage.cpp $HOME/lambda_predictor
+ADD src/utils.hpp $HOME/lambda_predictor
+ADD src/utils.cpp $HOME/lambda_predictor
 ADD src/lambda_main.cpp $HOME/lambda_predictor
 # uncomment next 2 lines except for local usage
-# ADD egdata/b60cfeea70c3c7045141eadce552135921b95679.png $HOME/lambda_predictor
-# ADD egdata/model.ts $HOME/lambda_predictor
+ADD egdata/b60cfeea70c3c7045141eadce552135921b95679.png $HOME/lambda_predictor
+ADD egdata/model.ts $HOME/lambda_predictor
 
+# RelWithDebInfo \
 RUN mkdir $HOME/lambda_predictor/build && cd $HOME/lambda_predictor/build && \
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    cmake -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_PREFIX_PATH="/out;$HOME/.local/;/libtorch/" .. \
     && make
 
-# Help lambda runtime find torchlib - very weird that it's only this library that needs an extra nudge,
-# but checks out to some extent with docs:
-# https://stackoverflow.com/questions/66370682/aws-lambda-not-finding-shared-object-file-in-layer
-# https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
-RUN cp $HOME/.local/lib/libtorchvision.so /lib/
+# Setup requirements for lambda runtime
 
-# Entrypoint
-CMD ["/home/appuser/lambda_predictor/build/main"]
+# # Help lambda runtime find torchlib - very weird that it's only this library that needs an extra nudge,
+# # but checks out to some extent with docs:
+# # https://stackoverflow.com/questions/66370682/aws-lambda-not-finding-shared-object-file-in-layer
+# # https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
+# RUN cp $HOME/.local/lib/libtorchvision.so /lib/
+# # Entrypoint
+# CMD ["/home/appuser/lambda_predictor/build/main"]
