@@ -99,10 +99,10 @@ list<Prediction> makePredictions(std::string imageFilePath, std::string modelFil
         << rcnn_outputs.pred_masks.sizes() << endl;
 
 
-    for (int i; i<rcnn_outputs.num_instances();++i){
+    for (int i=0; i<rcnn_outputs.num_instances();++i){
         Prediction prediction = {};
         // extract bounding box from tensor
-        for (int q; q<4; q++){
+        for (int q=0; q<4; q++){
           prediction.boundingBox[q] = rcnn_outputs.pred_boxes[i].data_ptr<float>()[q];
         }
         prediction.score = rcnn_outputs.scores[i].item<float>();
