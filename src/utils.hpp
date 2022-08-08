@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <uuid/uuid.h> // For dynamo id fields
 
+char* UUID();
 
 // Conversion struct from torch tensor classification output to human readable
 // (Defenitions where created in the python MetaDataCatalouge map):

@@ -19,21 +19,39 @@
 #include <aws/core/utils/Outcome.h>
 #include <aws/dynamodb/DynamoDBClient.h>
 #include <aws/dynamodb/model/AttributeDefinition.h>
+#include <aws/dynamodb/model/BatchWriteItemRequest.h>
+
 #include <aws/dynamodb/model/AttributeValueValue.h>
 #include <aws/dynamodb/model/PutItemRequest.h>
 #include <aws/dynamodb/model/PutItemResult.h>
 
 #include "utils.hpp"
 
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value);
+ // This appears to be required for the cpp runtime at least (not sure elsewhere for dynamo)
+const int BATCH_LIMIT = 25;
 
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(char* value);
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(float value);
 
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value[], int size);
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(char* value);
 
-//const Aws::DynamoDB::DynamoDBClient& dynamoClient, //
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(float value[], int size);
+
+// //const Aws::DynamoDB::DynamoDBClient& dynamoClient, //
+// int storePredictions(
+//     const Aws::DynamoDB::DynamoDBClient& dynamoClient,
+//     std::string dynamoTableName,
+//     std::list<Prediction> predictions
+// );
+
+Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Prediction> predictions,
+                                                             std::string s3Key,
+                                                             std::string dynamoTableName);
+
 int storePredictions(
     const Aws::DynamoDB::DynamoDBClient& dynamoClient,
     std::string dynamoTableName,
-    std::list<Prediction> predictions
-);
+    std::string s3Key,
+    std::list<Prediction> predictions);

@@ -89,7 +89,7 @@ static invocation_response my_handler(invocation_request const& req,
 
         // NOTE: this first status code isn't used
         //            --> you want to run the rest of this function call no matter what
-        int code = storePredictions(dynamoClient, tableName, predictionsList);
+        int code = storePredictions(dynamoClient, tableName, objectKey, predictionsList);
         /*************************************************************************************/
 
         // Remove the retreived file from the baseDir

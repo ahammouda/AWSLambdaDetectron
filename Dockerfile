@@ -105,7 +105,8 @@ ADD egdata/model.ts $HOME/lambda_predictor
 # RelWithDebInfo \
 RUN mkdir $HOME/lambda_predictor/build && cd $HOME/lambda_predictor/build && \
     cmake -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_PREFIX_PATH="/out;$HOME/.local/;/libtorch/" .. \
+    -DCMAKE_PREFIX_PATH="/out;$HOME/.local/;/libtorch/" \
+    -DCMAKE_CXX_STANDARD_LIBRARIES=-luuid .. \
     && make
 
 # Setup requirements for lambda runtime

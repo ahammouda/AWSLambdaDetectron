@@ -1,23 +1,29 @@
 #include "storage.hpp"
+#include "utils.hpp"
 
 // https://github.com/aws/aws-sdk-cpp/issues/1526
 // https://stackoverflow.com/questions/65039858/aws-cpp-sdk-jsonvalue-add-array-of-double-or-integer-to-json
 // template <typename T>
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value) {
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(float value) {
     Aws::DynamoDB::Model::AttributeValue valueDynamo;
     // if constexpr (std::is_same_v<T, animal>)
     valueDynamo.SetN(value);
-    return std::make_shared<Aws::DynamoDB::Model::AttributeValue>(valueDynamo);
+    return valueDynamo;
+    // std::make_shared<Aws::DynamoDB::Model::AttributeValue>()
 }
 
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(char* value) {
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(char* value) {
     Aws::DynamoDB::Model::AttributeValue valueDynamo;
     // if constexpr (std::is_same_v<T, animal>)
     valueDynamo.SetS(value);
-    return std::make_shared<Aws::DynamoDB::Model::AttributeValue>(valueDynamo);
+    return valueDynamo;
+    // std::make_shared<Aws::DynamoDB::Model::AttributeValue>()
 }
 
-std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value[], int size) {
+// std::shared_ptr<>
+Aws::DynamoDB::Model::AttributeValue GetDynamoSafe(float value[], int size) {
     Aws::DynamoDB::Model::AttributeValue dynamoList = {};
     int n;
     for (n=0 ; n<size ; ++n ) {
@@ -33,97 +39,130 @@ std::shared_ptr<Aws::DynamoDB::Model::AttributeValue> GetDynamoSafe(float value[
             sharedItem
         );
     }
-    return std::make_shared<Aws::DynamoDB::Model::AttributeValue>(dynamoList);
+    return dynamoList;
+    //std::make_shared<Aws::DynamoDB::Model::AttributeValue>()
+}
+
+// TODO: Get rid of this or add to utils as a documenations source
+Aws::String awsString(char str[]){
+    std::string s(str);
+    Aws::String a_str(s.c_str(),s.size());
+    return a_str;
+}
+
+Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Prediction> predictions,
+                                                             std::string s3Key,
+                                                             std::string dynamoTableName){
+    // core data structures
+    Aws::DynamoDB::Model::BatchWriteItemRequest batchWriteRequest =
+        *(new Aws::DynamoDB::Model::BatchWriteItemRequest());
+    std::vector<Aws::DynamoDB::Model::WriteRequest> writeRequests;
+    for (Prediction pred: predictions){
+        // Package writeReqs
+        Aws::DynamoDB::Model::WriteRequest writeReq;
+        // Which is built up of PutRequest
+        Aws::DynamoDB::Model::PutRequest putReq;
+        // Which requires a document
+        Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> document;
+
+        document[Aws::String("id")] = GetDynamoSafe(UUID());
+        document[Aws::String("s3Key")] = GetDynamoSafe(const_cast<char*>(s3Key.c_str()));
+        document[Aws::String("boundingBox")] = GetDynamoSafe(pred.boundingBox,4);
+        document[Aws::String("classification")] = GetDynamoSafe(
+            const_cast<char*>(
+                pred.classification.c_str()
+            )
+        );
+        document[Aws::String("score")] = GetDynamoSafe(pred.score);
+        putReq.SetItem(document);
+        writeReq.SetPutRequest(putReq);
+        writeRequests.push_back(writeReq);
+    }
+    // Add WriteRequests to BatchWriteReq
+    Aws::String dynamoTableNameAStr(dynamoTableName.c_str(),dynamoTableName.size());
+    batchWriteRequest.AddRequestItems(dynamoTableNameAStr, writeRequests);
+    return batchWriteRequest;
 }
 
 //const Aws::DynamoDB::DynamoDBClient& dynamoClient,
 int storePredictions(
     const Aws::DynamoDB::DynamoDBClient& dynamoClient,
     std::string dynamoTableName,
-    std::list<Prediction> predictions)
-{
+    std::string s3Key,
+    std::list<Prediction> predictions){
     std::cout << "running storePredictions code.."  << std::endl;
+    // Aws::DynamoDB::Model::BatchWriteItemRequest batchWriteRequest = *(new Aws::DynamoDB::Model::BatchWriteItemRequest());
 
-    // Aws::SDKOptions options;
-    // options.cryptoOptions.initAndCleanupOpenSSL=false;
+    // // main data structure to pass to client
+    // std::vector<Aws::DynamoDB::Model::WriteRequest> writeRequests;
 
-    // Aws::InitAPI(options);
-    // {
-    //     Aws::Client::ClientConfiguration clientConfig;
-    //     // clientConfig.region = Aws::Environment::GetEnv("AWS_REGION");
+    // // Build up request ONE *********************************
+    // Aws::DynamoDB::Model::WriteRequest writeReqOne;
 
-    //     std::cout << "inititializing lambda config in " << clientConfig.region << std::endl;
+    // // Which is built up of PutRequest
+    // Aws::DynamoDB::Model::PutRequest putReqOne;
 
-    //     Aws::DynamoDB::DynamoDBClient dynamoClient(clientConfig);
+    // //which is built of a map:
+    // Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> documentOne;
+    // std::string keyO{"id"};
+    // Aws::String a_keyO(keyO.c_str(),keyO.size());
+    // documentOne[a_keyO] = GetDynamoSafe(UUID());
+    // std::string valO{"foo"};
+    // Aws::String a_valO(valO.c_str(),valO.size());
+    // char valOne[] = "bar";
+    // documentOne[a_valO] = GetDynamoSafe(valOne);
 
-    //     std::cout << "inititialized lambda runtime" << std::endl;
+    // putReqOne.SetItem(documentOne);
+    // writeReqOne.SetPutRequest(putReqOne);
 
-        // Init Request
-        Aws::DynamoDB::Model::PutItemRequest putItemRequest;
+    // // Build up request TWO *********************************
+    // Aws::DynamoDB::Model::WriteRequest writeReqTwo;
 
-        putItemRequest.SetTableName( dynamoTableName );
+    // // Which is built up of PutRequest
+    // Aws::DynamoDB::Model::PutRequest putReqTwo;
 
-        char *generated_pk = (char *) malloc(37*sizeof(char));
-        uuid_t uuid;
-        uuid_generate(uuid);
-        uuid_unparse(uuid, generated_pk);
-        std::cout << generated_pk << std::endl;
+    // // https://stackoverflow.com/questions/52452144/how-to-convert-between-a-stdstring-and-an-awsstring
+    // //which is built of a map:
+    // Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> documentTwo;
+    // std::string key{"id"};
+    // Aws::String a_key(key.c_str(),key.size());
+    // documentTwo[key] = GetDynamoSafe(UUID());
+    // std::string val{"foo"};
+    // Aws::String a_val(val.c_str(),val.size());
+    // char valTwo[] = "bar x 2";
+    // documentTwo[a_val] = GetDynamoSafe(valTwo);
 
-        // // Init top level list object to store in this request
-        Aws::DynamoDB::Model::AttributeValue allPredictions = {};
+    // putReqTwo.SetItem(documentTwo);
+    // writeReqTwo.SetPutRequest(putReqTwo);
 
-        // // Set Attribute Value for primary key
-        Aws::DynamoDB::Model::AttributeValue pk;
-        pk.SetS(generated_pk);
+    // // *******************************************************
+    // writeRequests.push_back(writeReqOne);
+    // writeRequests.push_back(writeReqTwo);
 
-        while (!predictions.empty())
-        {
-            Prediction curPrediction = predictions.front();
+    // std::string TableName{"TestTable"};
+    // Aws::String a_TableName(TableName.c_str(),TableName.size());
+    // batchWriteRequest.AddRequestItems(a_TableName, writeRequests);
+    // NOTE: Can only create these requests in chunks of 25;  Therefore, we need to create
+    //       some kind of slicing operatation to pop from the front
+    int count = 0;
+    while (!predictions.empty()){
+        std::list<Prediction> newPredictions = {};
+        while (newPredictions.size()<25 && !predictions.empty()) {
+            newPredictions.push_back(predictions.front());
             predictions.pop_front();
-
-            // Initialize Prediction Record
-            Aws::DynamoDB::Model::AttributeValue predictionSet = {};
-
-            // Set key/values for prediction record: Bounding Box
-            predictionSet.AddMEntry(Aws::String("boundingBoxes"),
-                GetDynamoSafe(
-                    curPrediction.boundingBox,4
-                )
-            );
-            predictionSet.AddMEntry(
-                Aws::String("classification"),
-                GetDynamoSafe(
-                    const_cast<char*>(
-                        curPrediction.classification.c_str()
-                    )
-                )
-            );
-            predictionSet.AddMEntry(Aws::String("score"),
-                GetDynamoSafe(
-                    curPrediction.score
-                )
-            );
-
-            // Make Prediction Record type safe for AWS
-            auto sharedPredictionSet =
-                std::make_shared<Aws::DynamoDB::Model::AttributeValue>(predictionSet);
-
-            // Add Prediction Record to top level list of all predictions
-            allPredictions.AddLItem(sharedPredictionSet);
+            count++;
         }
-        // Store field/values for final dynamo document put request
-        putItemRequest.AddItem("id", pk);
-        putItemRequest.AddItem("predictions", allPredictions);
+        Aws::DynamoDB::Model::BatchWriteItemRequest batchWriteRequest = CreateBatchWrite(
+            newPredictions,s3Key,dynamoTableName);
 
-        std::cout << "Attempting to create Document: " << generated_pk << "..." << std::endl;
-        const Aws::DynamoDB::Model::PutItemOutcome result = dynamoClient.PutItem(putItemRequest);
+        const Aws::DynamoDB::Model::BatchWriteItemOutcome result = dynamoClient.BatchWriteItem(batchWriteRequest);
         if (!result.IsSuccess())
         {
             std::cout << result.GetError().GetMessage() << std::endl;
             return 1;
         }
-        std::cout << "Successfully created Document" << generated_pk << " !" << std::endl;
-    // }
-    // ShutdownAPI(options);
+        std::cout << "Successfully batch wrote items through " << count << std::endl; // << generated_pk << " !" <<
+        newPredictions.clear();
+    }
     return 0;
 }

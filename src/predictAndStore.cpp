@@ -30,7 +30,8 @@ int main()
         // Table Name
         auto const& tableName = Aws::Environment::GetEnv("TABLE_NAME");
         std::cout << "calling storePredictions for table " << tableName << "..." << std::endl;
-        int code = storePredictions(dynamoClient,tableName,ls); //dynamoClient,
+
+        int code = storePredictions(dynamoClient,tableName,"b60cfeea70c3c7045141eadce552135921b95679",ls); //dynamoClient,
         std::cout << "storePredictions status code: " << code << std::endl;
 
     }
