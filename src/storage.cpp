@@ -141,7 +141,7 @@ char* storeImageProcessingMetaData(
             cognitoClient.AdminGetUser(adminReq);
     if (!adminOutcome.IsSuccess()){
         std::cout << adminOutcome.GetError().GetMessage() << std::endl;
-        char* error = "ERROR";
+        char* error = const_cast<char*>("ERROR");
         return error;
     }
     std::string userId;
@@ -191,7 +191,8 @@ char* storeImageProcessingMetaData(
     if (!result.IsSuccess())
     {
         std::cout << result.GetError().GetMessage() << std::endl;
-        return storageKey;
+        char* error = const_cast<char*>("ERROR");
+        return error;
     }
     std::cout << "Successfully created ImageUploads: " << storageKey << " !" << std::endl;
     return storageKey;
