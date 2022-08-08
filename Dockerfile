@@ -115,6 +115,6 @@ RUN mkdir $HOME/lambda_predictor/build && cd $HOME/lambda_predictor/build && \
 # # but checks out to some extent with docs:
 # # https://stackoverflow.com/questions/66370682/aws-lambda-not-finding-shared-object-file-in-layer
 # # https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
-# RUN cp $HOME/.local/lib/libtorchvision.so /lib/
+RUN cp $HOME/.local/lib/libtorchvision.so /lib/
 # # Entrypoint
-# CMD ["/home/appuser/lambda_predictor/build/main"]
+CMD ["/home/appuser/lambda_predictor/build/main"]

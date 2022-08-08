@@ -50,6 +50,8 @@ Aws::String awsString(char str[]){
     return a_str;
 }
 
+// Follow types for BatchWriteItem to build this up
+// https://sdk.amazonaws.com/cpp/api/LATEST/class_aws_1_1_dynamo_d_b_1_1_dynamo_d_b_client.html
 Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Prediction> predictions,
                                                              std::string s3Key,
                                                              std::string dynamoTableName){
@@ -91,59 +93,8 @@ int storePredictions(
     std::string s3Key,
     std::list<Prediction> predictions){
     std::cout << "running storePredictions code.."  << std::endl;
-    // Aws::DynamoDB::Model::BatchWriteItemRequest batchWriteRequest = *(new Aws::DynamoDB::Model::BatchWriteItemRequest());
 
-    // // main data structure to pass to client
-    // std::vector<Aws::DynamoDB::Model::WriteRequest> writeRequests;
 
-    // // Build up request ONE *********************************
-    // Aws::DynamoDB::Model::WriteRequest writeReqOne;
-
-    // // Which is built up of PutRequest
-    // Aws::DynamoDB::Model::PutRequest putReqOne;
-
-    // //which is built of a map:
-    // Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> documentOne;
-    // std::string keyO{"id"};
-    // Aws::String a_keyO(keyO.c_str(),keyO.size());
-    // documentOne[a_keyO] = GetDynamoSafe(UUID());
-    // std::string valO{"foo"};
-    // Aws::String a_valO(valO.c_str(),valO.size());
-    // char valOne[] = "bar";
-    // documentOne[a_valO] = GetDynamoSafe(valOne);
-
-    // putReqOne.SetItem(documentOne);
-    // writeReqOne.SetPutRequest(putReqOne);
-
-    // // Build up request TWO *********************************
-    // Aws::DynamoDB::Model::WriteRequest writeReqTwo;
-
-    // // Which is built up of PutRequest
-    // Aws::DynamoDB::Model::PutRequest putReqTwo;
-
-    // // https://stackoverflow.com/questions/52452144/how-to-convert-between-a-stdstring-and-an-awsstring
-    // //which is built of a map:
-    // Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> documentTwo;
-    // std::string key{"id"};
-    // Aws::String a_key(key.c_str(),key.size());
-    // documentTwo[key] = GetDynamoSafe(UUID());
-    // std::string val{"foo"};
-    // Aws::String a_val(val.c_str(),val.size());
-    // char valTwo[] = "bar x 2";
-    // documentTwo[a_val] = GetDynamoSafe(valTwo);
-
-    // putReqTwo.SetItem(documentTwo);
-    // writeReqTwo.SetPutRequest(putReqTwo);
-
-    // // *******************************************************
-    // writeRequests.push_back(writeReqOne);
-    // writeRequests.push_back(writeReqTwo);
-
-    // std::string TableName{"TestTable"};
-    // Aws::String a_TableName(TableName.c_str(),TableName.size());
-    // batchWriteRequest.AddRequestItems(a_TableName, writeRequests);
-    // NOTE: Can only create these requests in chunks of 25;  Therefore, we need to create
-    //       some kind of slicing operatation to pop from the front
     int count = 0;
     while (!predictions.empty()){
         std::list<Prediction> newPredictions = {};
