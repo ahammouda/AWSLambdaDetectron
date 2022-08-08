@@ -25,6 +25,9 @@
 #include <aws/dynamodb/model/PutItemRequest.h>
 #include <aws/dynamodb/model/PutItemResult.h>
 
+#include <aws/cognito-idp/model/AdminGetUserRequest.h>
+#include <aws/cognito-idp/CognitoIdentityProviderClient.h>
+
 #include "utils.hpp"
 
  // This appears to be required for the cpp runtime at least (not sure elsewhere for dynamo)
@@ -53,5 +56,10 @@ Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Predictio
 int storePredictions(
     const Aws::DynamoDB::DynamoDBClient& dynamoClient,
     std::string dynamoTableName,
-    std::string s3Key,
+    char* imageUploadId,
     std::list<Prediction> predictions);
+
+char* storeImageProcessingMetaData(
+    const Aws::DynamoDB::DynamoDBClient& dynamoClient,
+    const Aws::CognitoIdentityProvider::CognitoIdentityProviderClient& cognitoClient,
+    Aws::String s3Key, Aws::String tableName);

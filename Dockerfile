@@ -54,7 +54,7 @@ RUN mkdir /aws-lambda-cpp/build && cd /aws-lambda-cpp/build && \
 RUN git clone https://github.com/aws/aws-sdk-cpp.git
 RUN cd aws-sdk-cpp && git submodule update --init --recursive
 RUN cd aws-sdk-cpp && mkdir build && cd build && \
-    cmake .. -DBUILD_ONLY="s3;dynamodb" \
+    cmake .. -DBUILD_ONLY="s3;dynamodb;cognito-idp" \
      -DBUILD_SHARED_LIBS=OFF \
      -DENABLE_UNITY_BUILD=ON \
      -DCMAKE_BUILD_TYPE=Release \
@@ -99,7 +99,7 @@ ADD src/utils.hpp $HOME/lambda_predictor
 ADD src/utils.cpp $HOME/lambda_predictor
 ADD src/lambda_main.cpp $HOME/lambda_predictor
 # uncomment next 2 lines except for local usage
-ADD egdata/b60cfeea70c3c7045141eadce552135921b95679.png $HOME/lambda_predictor
+# ADD egdata/b60cfeea70c3c7045141eadce552135921b95679.png $HOME/lambda_predictor # only uncomment if not testing w/s3
 ADD egdata/model.ts $HOME/lambda_predictor
 
 # RelWithDebInfo \
@@ -116,5 +116,5 @@ RUN mkdir $HOME/lambda_predictor/build && cd $HOME/lambda_predictor/build && \
 # # https://stackoverflow.com/questions/66370682/aws-lambda-not-finding-shared-object-file-in-layer
 # # https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
 RUN cp $HOME/.local/lib/libtorchvision.so /lib/
-# # Entrypoint
+# Entrypoint
 CMD ["/home/appuser/lambda_predictor/build/main"]

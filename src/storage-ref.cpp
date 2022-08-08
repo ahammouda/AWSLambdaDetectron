@@ -12,7 +12,6 @@ int storePredictions(
     //          run the batchItem  --
     // Init Request
     Aws::DynamoDB::Model::PutItemRequest putItemRequest;
-
     putItemRequest.SetTableName( dynamoTableName );
 
     char *generated_pk = (char *) malloc(37*sizeof(char));

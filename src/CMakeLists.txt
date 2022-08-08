@@ -22,7 +22,7 @@ target_link_libraries(predictions
 
 
 # ****** Setup dynamo storage code and dependencies ******
-find_package(AWSSDK REQUIRED COMPONENTS s3 dynamodb)
+find_package(AWSSDK REQUIRED COMPONENTS s3 dynamodb cognito-idp)
 
 add_library(dynamoStorage SHARED storage.hpp storage.cpp)
 target_link_libraries(dynamoStorage AWS::aws-lambda-runtime ${AWSSDK_LINK_LIBRARIES} utils)

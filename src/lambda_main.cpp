@@ -27,12 +27,16 @@ char const TAG[] = "LAMBDA_ALLOC";
 
 static invocation_response my_handler(invocation_request const& req,
                                       Aws::S3::S3Client const& s3Client,
-                                      Aws::DynamoDB::DynamoDBClient const& dynamoClient) {
+                                      Aws::DynamoDB::DynamoDBClient const& dynamoClient,
+                                      Aws::CognitoIdentityProvider::CognitoIdentityProviderClient cognitoClient) {
 
-    auto const& tableName = Aws::Environment::GetEnv("TABLE_NAME");
+    auto const& predTableName = Aws::Environment::GetEnv("PRED_TABLE_NAME");
+    auto const& uploadTableName = Aws::Environment::GetEnv("UPLOAD_TABLE_NAME");
+
+    // auto const& tableName = Aws::Environment::GetEnv("TABLE_NAME");
     auto const& baseDir = Aws::Environment::GetEnv("MODEL_DIR");
 
-    std::cout << "Table Name:  " << tableName << std::endl;
+    std::cout << "Table Name:  " << predTableName << std::endl;
     std::cout << "Model Directory:  " << baseDir << std::endl;
 
     // Log existence/access to model directory
@@ -51,6 +55,9 @@ static invocation_response my_handler(invocation_request const& req,
         !v.GetArray("Records")[0].GetObject("s3").ValueExists("object")) {
         return invocation_response::failure("Missing input value s3bucket or s3key", "InvalidJSON");
     }
+    // const Aws::String userId = v.GetArray("Records")[0].GetObject("userIdentity").GetString("principalId");
+
+    // std::cout << "*** User Id: " << userId << std::endl;
 
     const Aws::String fromBucket =
         v.GetArray("Records")[0].GetObject("s3").GetObject("bucket").GetString("name");
@@ -74,26 +81,30 @@ static invocation_response my_handler(invocation_request const& req,
 
     if (get_object_outcome.IsSuccess())
     {
+        std::vector<std::string> pathComponents = splitString(std::string(objectKey),'/');
+        std::string fileName = pathComponents.back();
+
         // Write retreived file to the baseDir
         auto& retrieved_file = get_object_outcome.GetResultWithOwnership().
             GetBody();
-        std::fstream image_file(baseDir + objectKey, std::ios::out | std::ios::binary);
+        std::fstream image_file(baseDir + fileName, std::ios::out | std::ios::binary);
         image_file << retrieved_file.rdbuf();
 
         // Call prediction code and store results
         /*************************************************************************************/
         std::list<Prediction> predictionsList = makePredictions(
-            baseDir + objectKey,
+            baseDir + fileName,
             baseDir + "model.ts"
         );
 
+        char* uuid = storeImageProcessingMetaData(dynamoClient,cognitoClient,objectKey,uploadTableName);
         // NOTE: this first status code isn't used
         //            --> you want to run the rest of this function call no matter what
-        int code = storePredictions(dynamoClient, tableName, objectKey, predictionsList);
+        int code = storePredictions(dynamoClient, predTableName, uuid, predictionsList);
         /*************************************************************************************/
 
         // Remove the retreived file from the baseDir
-        code = std::remove((baseDir + objectKey).c_str());
+        code = std::remove((baseDir + fileName).c_str());
         if (code == 0){
             std::cout << "Success Removing file " << baseDir + objectKey << std::endl;
         } else {
@@ -141,9 +152,11 @@ int main()
         auto credentialsProvider = Aws::MakeShared<Aws::Auth::EnvironmentAWSCredentialsProvider>(TAG);
         S3::S3Client client(credentialsProvider, config);
         Aws::DynamoDB::DynamoDBClient dynamoClient(config);
+        Aws::CognitoIdentityProvider::CognitoIdentityProviderClient cognitoClient(config);
 
-        auto handler_fn = [&client,&dynamoClient](aws::lambda_runtime::invocation_request const& req) {
-            return my_handler(req, client, dynamoClient);
+
+        auto handler_fn = [&client,&dynamoClient,&cognitoClient](aws::lambda_runtime::invocation_request const& req) {
+            return my_handler(req, client, dynamoClient, cognitoClient);
         };
         run_handler(handler_fn);
     }
