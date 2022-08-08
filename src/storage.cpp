@@ -68,6 +68,7 @@ Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Predictio
         Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue> document;
 
         document[Aws::String("id")] = GetDynamoSafe(UUID());
+        // std::cout << "attempting to add " << imageUploadId << " field..." << std::endl;
         document[Aws::String("imageUploadId")] = GetDynamoSafe( imageUploadId );
         document[Aws::String("boundingBox")] = GetDynamoSafe(pred.boundingBox,4);
         document[Aws::String("classification")] = GetDynamoSafe(
@@ -76,13 +77,17 @@ Aws::DynamoDB::Model::BatchWriteItemRequest CreateBatchWrite(std::list<Predictio
             )
         );
         document[Aws::String("score")] = GetDynamoSafe(pred.score);
+
         putReq.SetItem(document);
+        // std::cout << "json putReq: " << putReq.Jsonize().View().WriteCompact(true) << std::endl;
         writeReq.SetPutRequest(putReq);
+        // std::cout << "json writeReq: " << writeReq.Jsonize().View().WriteCompact(true) << std::endl;
         writeRequests.push_back(writeReq);
     }
     // Add WriteRequests to BatchWriteReq
     Aws::String dynamoTableNameAStr(dynamoTableName.c_str(),dynamoTableName.size());
     batchWriteRequest.AddRequestItems(dynamoTableNameAStr, writeRequests);
+    std::cout << "prepped " << predictions.size() << " write requests..." << std::endl;
     return batchWriteRequest;
 }
 
@@ -130,6 +135,7 @@ char* storeImageProcessingMetaData(
     // https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
     std:: string tok("-at-");
     size_t pos = userName.find(tok);
+    // TODO: don't run this function if pos returns error code of some kind
     userName.replace(pos,tok.length(), "@");
 
     // With username, fetch userId;

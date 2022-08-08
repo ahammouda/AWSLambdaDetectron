@@ -36,7 +36,8 @@ static invocation_response my_handler(invocation_request const& req,
     // auto const& tableName = Aws::Environment::GetEnv("TABLE_NAME");
     auto const& baseDir = Aws::Environment::GetEnv("MODEL_DIR");
 
-    std::cout << "Table Name:  " << predTableName << std::endl;
+    std::cout << "pred Table Name:  " << predTableName << std::endl;
+    std::cout << "uploads Table Name:  " << uploadTableName << std::endl;
     std::cout << "Model Directory:  " << baseDir << std::endl;
 
     // Log existence/access to model directory
@@ -106,11 +107,11 @@ static invocation_response my_handler(invocation_request const& req,
         // Remove the retreived file from the baseDir
         code = std::remove((baseDir + fileName).c_str());
         if (code == 0){
-            std::cout << "Success Removing file " << baseDir + objectKey << std::endl;
+            std::cout << "Success Removing file " << baseDir + fileName << std::endl;
         } else {
-            std::cout << "Something went wrong removing file " << baseDir + objectKey << std::endl;
+            std::cout << "Something went wrong removing file " << baseDir + fileName << std::endl;
             return invocation_response::failure(
-                "Something went wrong removing file " + baseDir + objectKey,
+                "Something went wrong removing file " + baseDir + fileName,
                 "EFSIOError"
             );
         }
