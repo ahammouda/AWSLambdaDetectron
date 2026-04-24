@@ -1,6 +1,6 @@
 # About
 
-C++ source code for predicting classifications, and storing those predictions in dynamodb.  Can modify to just run, or use with lambda
+C++ source code for predicting classifications, and storing those predictions in dynamodb.  Can modify to just run, or use with lambda.  Adapted from [detectron2](https://github.com/facebookresearch/detectron2/blob/main/tools/deploy/README.md)
 
 # Running The Code
 ```
